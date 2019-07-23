@@ -1,0 +1,27 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  config.vm.box = "{% if box is defined -%}{{ box }}{% else %}precise64{%- endif %}"
+  # config.vm.box_url - no need right now
+
+  {% for item in servers -%}
+  config.vm.define :{{ item['hostname'] }} do |node|
+    node.vm.hostname = "{{ item['hostname']}}"
+
+    node.vm.network :private_network, ip: "{{ item['ip'] }}"
+    {% if 'port_forwarding' in item -%}
+        {% for guest, host in item['port_forwarding'] -%}
+            node.vm.network :forwarded_port,
+                guest: {{ guest }},
+                host: {{ host }},
+                auto_correct: true
+        {% endfor -%}
+    {% endif -%}
+  end
+  {% endfor -%}
+
+end
