@@ -5,23 +5,35 @@ VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
-  config.vm.box = "{% if box is defined -%}{{ box }}{% else %}precise64{%- endif %}"
-  # config.vm.box_url - no need right now
+    servers = {{ servers | safe }}
 
-  {% for item in servers -%}
-  config.vm.define :{{ item['hostname'] }} do |node|
-    node.vm.hostname = "{{ item['hostname']}}"
+    servers.each do |machine|
+      config.vm.define machine[:hostname] do |node|
+        node.vm.box = "{{ box }}"
+        #node.vm.box_url - no need right now
+        node.vm.hostname = machine[:hostname]
 
-    node.vm.network :private_network, ip: "{{ item['ip'] }}"
-    {% if 'port_forwarding' in item -%}
-        {% for guest, host in item['port_forwarding'] -%}
-            node.vm.network :forwarded_port,
-                guest: {{ guest }},
-                host: {{ host }},
-                auto_correct: true
-        {% endfor -%}
-    {% endif -%}
-  end
-  {% endfor -%}
+        node.vm.network :private_network, ip: machine[:ip]
+        node.vm.network :forwarded_port,
+                guest: 22,
+                host: machine[:ssh_port],
+                id: "ssh"
+        node.vm.provision "shell", path: "./scripts/guest_script.sh"
 
+        # First of all (and before the first machine is UP) - create destination folder
+        node.trigger.before :up do |trigger|
+          trigger.only_on = servers[0][:hostname] #first_vm
+          trigger.run = {inline: "mkdir -p ./outputs/"}
+        end
+
+         # Build the scp command to run on guest
+         private_key_path = ".vagrant/machines/#{machine[:hostname]}/virtualbox/private_key"
+         remote_vagrant_path = "vagrant@127.0.0.1:/vagrant"
+         scp_command  = "scp -o StrictHostKeyChecking=no -i #{private_key_path} -P #{machine[:ssh_port]} #{remote_vagrant_path}/output.txt  ./outputs/#{machine[:hostname]}.txt"
+
+         node.trigger.after :up do |trigger|
+             trigger.run = {inline: scp_command}
+         end
+      end
+    end
 end

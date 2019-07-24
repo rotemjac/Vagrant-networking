@@ -1,3 +1,1 @@
-box_config = {
-    'box': 'debian/jessie64',
-}
+box_config = 'debian/jessie64'

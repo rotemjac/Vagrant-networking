@@ -11,7 +11,9 @@ class VagrantManager:
             config,
             vagrantfile_path='Vagrantfile'
     ):
-        file = open(vagrantfile_path, 'w+')
+        __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+        file = open(os.path.join(__location__, vagrantfile_path) , 'w+')
+
         file.write(cls.__load_template().render(config))
         file.close()
 

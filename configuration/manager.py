@@ -8,10 +8,11 @@ from configuration.config_files import (
 
 class ConfigManager:
     def __init__(self):
-        self.config = dict()
-        self.config.update(box.box_config)
-        self.config.update(servers.servers_config)
-        self.config.update(network.network_config)
+        self.config = {
+            'box': box.box_config,
+            'servers': servers.servers_config,
+            'network': network.network_config
+        }
 
 
     def get_configuration(self):
