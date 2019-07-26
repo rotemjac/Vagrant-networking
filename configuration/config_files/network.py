@@ -1,2 +1,2 @@
-network_config = {
-}
+network_config = {"mode" : "bridge"}
+
